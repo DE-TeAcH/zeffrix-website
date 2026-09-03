@@ -1,0 +1,535 @@
+I want you to design and build a complete, premium landing website for my fitness app called ZEFFRIX.
+
+IMPORTANT:
+I have attached real screenshots of the Zeffrix mobile application and the official ZF logo.
+
+Use these screenshots as BOTH:
+1. The source of truth for Zeffrix's visual identity.
+2. Real product assets to showcase throughout the website.
+
+DO NOT redesign the mobile application.
+DO NOT modify the UI inside the screenshots.
+DO NOT invent fake Zeffrix screens.
+Instead, build a beautiful WEBSITE around the real product screenshots.
+
+==================================================
+1. UNDERSTAND THE PRODUCT
+==================================================
+
+ZEFFRIX is a modern fitness application focused on helping users train consistently, build/customize workouts, receive AI-powered fitness guidance, and track their progress.
+
+Core features visible in the provided screenshots:
+
+• Workout plans and training splits
+• Custom workout creation
+• Exercise selection, ordering, sets and reps
+• AI workout verification
+• Zeffrix AI Coach
+• Quick fitness Q&A
+• Workout tracking
+• Strength tracking
+• Bodyweight/body-performance tracking
+• Workout history and streaks
+• Personalized fitness experience
+
+A particularly important feature is CUSTOM WORKOUTS.
+
+The flow is essentially:
+
+Create workout
+→ Give it a name/description
+→ Explain why you're choosing those exercises
+→ Add exercises
+→ Configure sets/reps
+→ Reorder exercises
+→ Configure workout settings
+→ Press "Verify Workout"
+→ Zeffrix AI analyzes the workout
+
+This should be one of the strongest sections of the website.
+
+==================================================
+2. BRAND / VISUAL DIRECTION
+==================================================
+
+The website MUST feel like the same product as the mobile app.
+
+Study the screenshots carefully before designing.
+
+Primary visual identity:
+
+• Near-black background
+• Dark charcoal cards/surfaces
+• White primary typography
+• Muted gray secondary typography
+• Strong Zeffrix orange as the primary accent
+• Thin subtle borders
+• Occasional controlled orange glow
+• Fitness/gym imagery
+• Bold typography
+• Premium dark fitness aesthetic
+• Clean, modern spacing
+• Rounded corners consistent with the application
+
+Use the orange from the actual Zeffrix UI/logo as the main accent.
+
+Do NOT turn this into a generic purple/blue AI SaaS website.
+
+Avoid:
+• Purple gradients
+• Blue AI gradients
+• Excessive glassmorphism
+• Random neon colors
+• Excessive glowing
+• Generic startup illustrations
+• Fake dashboards
+• Random stock UI
+• Overly rounded "cute" SaaS design
+• Huge amounts of text
+• Generic AI-generated fitness copy
+
+The website should feel:
+
+POWERFUL
+PREMIUM
+ATHLETIC
+MODERN
+DARK
+CONFIDENT
+
+Think high-end fitness brand combined with modern technology.
+
+==================================================
+3. NAVIGATION
+==================================================
+
+Create a clean floating/sticky navigation bar.
+
+Left:
+ZF logo + ZEFFRIX
+
+Center/right navigation:
+Features
+AI Coach
+Custom Workouts
+Progress
+
+Right:
+Login
+Primary CTA: Get Started
+
+Keep the navigation minimal and premium.
+
+==================================================
+4. HERO SECTION
+==================================================
+
+This must immediately communicate what Zeffrix is.
+
+Use a large, bold headline.
+
+Suggested direction:
+
+TRAIN SMARTER.
+GET STRONGER.
+
+Highlight one important phrase in Zeffrix orange.
+
+Supporting copy:
+
+"Build workouts, train with AI guidance, and track the progress that actually matters."
+
+CTA buttons:
+
+Primary:
+Get Started
+
+Secondary:
+Explore Features
+
+Use the REAL Zeffrix Home screenshot prominently.
+
+Place it inside a polished phone/device presentation.
+
+Do NOT simply put a screenshot inside a boring rectangle.
+
+Create depth using:
+• subtle perspective
+• shadows
+• orange ambient glow
+• layered dark elements
+• possibly partially visible secondary screenshots behind it
+
+The phone/product should be a major visual element of the hero.
+
+Add a subtle background atmosphere inspired by a dark gym environment, but keep readability excellent.
+
+==================================================
+5. PRODUCT VALUE SECTION
+==================================================
+
+Introduce Zeffrix with a short, bold section.
+
+Possible heading:
+
+EVERYTHING YOUR TRAINING NEEDS.
+
+Show 3 or 4 concise capabilities:
+
+SMART WORKOUTS
+Train with structured workout plans.
+
+AI COACH
+Get fitness guidance when you need it.
+
+CUSTOM TRAINING
+Build workouts around how YOU want to train.
+
+REAL PROGRESS
+Track strength, performance and consistency.
+
+Use icons inspired by the actual Zeffrix application.
+
+Do not make this section look like generic SaaS feature cards.
+
+==================================================
+6. AI COACH SECTION
+==================================================
+
+This should be one of the main visual sections.
+
+Use the provided AI Coach screenshots.
+
+Heading direction:
+
+YOUR COACH.
+ALWAYS WITH YOU.
+
+Explain that Zeffrix AI Coach gives users accessible fitness guidance for:
+
+• Workout advice
+• Recovery
+• Goals
+• Training questions
+
+Show the AI Coach landing screen alongside the actual chat screen.
+
+Create a composition where one phone/screenshot is dominant and another is slightly offset behind/beside it.
+
+Use orange accents around important UI elements.
+
+Do not fabricate chat conversations. Use what exists in the screenshots.
+
+==================================================
+7. CUSTOM WORKOUT SECTION
+==================================================
+
+Make this section visually impressive.
+
+Heading:
+
+BUILD IT YOUR WAY.
+LET ZEFFRIX CHECK IT.
+
+Supporting text:
+
+"Create your own workout, choose your exercises, configure your training, and let Zeffrix AI help verify the structure."
+
+Show the real Custom Workout screenshots.
+
+Communicate the workflow visually:
+
+01 — Build
+Choose exercises and configure sets & reps.
+
+02 — Organize
+Reorder exercises and adjust workout settings.
+
+03 — Verify
+Let Zeffrix AI review the workout.
+
+Use the screenshot containing the orange "Verify Workout" button prominently.
+
+This section should make AI verification feel like a signature Zeffrix feature.
+
+Do NOT invent capabilities that aren't represented by the product.
+
+==================================================
+8. WORKOUT EXPERIENCE SECTION
+==================================================
+
+Heading direction:
+
+FROM PLAN
+TO PERFORMANCE.
+
+Use the real Workout Overview screenshot.
+
+Show:
+
+• Workout title
+• duration
+• exercise count
+• Start Workout
+• Overview
+• exercise information
+
+Also incorporate the Customized Workouts screenshot.
+
+Explain that users can access structured training while also keeping their own custom workouts.
+
+Use large product imagery rather than filling the section with text.
+
+==================================================
+9. PROGRESS SECTION
+==================================================
+
+Use the provided Progress screenshots.
+
+Heading:
+
+PROGRESS YOU CAN SEE.
+
+Show the strength tracking cards prominently:
+
+• Bench Press 1RM
+• Squat 1RM
+• Deadlift 1RM
+• body-performance tracking
+
+Use the actual charts from the screenshots.
+
+Supporting copy should emphasize:
+
+Track performance.
+See changes over time.
+Know whether your training is moving forward.
+
+Consider having the screenshots partially overlap with large typography or numerical/stat-inspired visual elements.
+
+Green/red progress indicators should remain as they appear in the real app.
+
+==================================================
+10. CONSISTENCY / HOME EXPERIENCE
+==================================================
+
+Use the Zeffrix Home screenshot to showcase:
+
+• Today's Plan
+• Streak
+• Workout count
+• Quick Actions
+• Custom Workout access
+
+Heading direction:
+
+SHOW UP.
+GET BETTER.
+REPEAT.
+
+Keep the copy short.
+
+The visual should do most of the communication.
+
+==================================================
+11. FINAL CTA
+==================================================
+
+Create a dramatic final section.
+
+Large typography:
+
+YOUR TRAINING.
+YOUR PROGRESS.
+ONE APP.
+
+Highlight "ONE APP." or another key phrase using Zeffrix orange.
+
+CTA:
+
+START WITH ZEFFRIX
+
+Use a subtle orange glow behind the CTA/product image.
+
+Optionally include the ZF logo as a large low-opacity background element.
+
+==================================================
+12. FOOTER
+==================================================
+
+Minimal dark footer.
+
+ZF logo
+ZEFFRIX
+
+Short description:
+"Train smarter. Track progress. Stay consistent."
+
+Links:
+Features
+AI Coach
+Workouts
+Progress
+Privacy
+Terms
+
+Add copyright.
+
+Do not make the footer unnecessarily large.
+
+==================================================
+13. ANIMATION / INTERACTION
+==================================================
+
+The website should feel alive but NOT gimmicky.
+
+Use tasteful interactions such as:
+
+• smooth scrolling
+• subtle fade/slide reveals
+• screenshot parallax
+• slight phone floating motion
+• button hover transitions
+• orange border/glow response on hover
+• navigation transition on scroll
+• subtle text reveals
+
+Product screenshots can move at slightly different speeds during scrolling to create depth.
+
+Do NOT:
+• rotate phones excessively
+• use crazy 3D effects
+• make content difficult to read
+• animate every element
+• use distracting particles everywhere
+
+Performance and usability come first.
+
+==================================================
+14. RESPONSIVENESS
+==================================================
+
+Design desktop AND mobile properly.
+
+Desktop:
+Use large editorial compositions with screenshots positioned creatively around text.
+
+Tablet:
+Reduce overlap while preserving visual hierarchy.
+
+Mobile:
+Stack sections naturally.
+Keep screenshots large enough to understand.
+Avoid tiny side-by-side phones.
+Maintain comfortable padding.
+Make CTAs easy to tap.
+
+The website itself must look excellent on phones because Zeffrix is a mobile product.
+
+==================================================
+15. IMPORTANT DESIGN RULE
+==================================================
+
+DO NOT make every section:
+
+[heading]
+[text]
+[3 cards]
+
+I specifically want to avoid the repetitive AI-generated landing page look.
+
+Vary the composition.
+
+For example:
+
+Hero:
+Text left / product right
+
+AI:
+Product left / text right
+
+Custom Workout:
+Centered headline + multi-screen product composition
+
+Workout Experience:
+Large edge-to-edge visual composition
+
+Progress:
+Text + overlapping tracking screenshots
+
+Final CTA:
+Large centered typography
+
+Use asymmetry, whitespace, oversized typography and product imagery to create visual rhythm.
+
+==================================================
+16. SCREENSHOT USAGE
+==================================================
+
+Prioritize these provided screens:
+
+1. Zeffrix Home
+2. AI Coach
+3. AI Coach conversation
+4. Create Custom Workout
+5. Custom Workout settings / Verify Workout
+6. Customized Workouts
+7. Workout Overview
+8. Progress / Strength Tracking
+
+The login screen, profile information screen and selection bottom sheets are secondary assets and DO NOT need major website sections.
+
+Use the official ZF logo provided.
+
+Do not recreate the logo using text or AI.
+
+==================================================
+17. COPY STYLE
+==================================================
+
+Keep copy short.
+
+Do NOT write corporate paragraphs.
+
+Bad:
+"Leverage our innovative AI-powered fitness ecosystem to unlock personalized insights..."
+
+Good:
+"Build it your way.
+Let Zeffrix check it."
+
+Bad:
+"Revolutionize your fitness journey."
+
+Good:
+"Train. Track. Improve."
+
+The voice should feel confident and athletic without sounding aggressive or cheesy.
+
+==================================================
+18. FINAL EXPECTATION
+==================================================
+
+Build this as a polished REAL product landing page, not a wireframe.
+
+The result should look launch-ready.
+
+The screenshots I've provided define the product.
+
+The Zeffrix app itself should be the star of the website.
+
+Before implementing the page, inspect ALL attached screenshots and derive a consistent design system from them.
+
+Maintain visual consistency across:
+• colors
+• typography
+• spacing
+• buttons
+• borders
+• cards
+• imagery
+• icon treatment
+
+I want someone landing on the website and then opening the Zeffrix mobile app to immediately feel that they belong to the same brand.
+
+Make Zeffrix look like a serious fitness product ready to launch.
