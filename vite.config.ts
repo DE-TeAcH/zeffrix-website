@@ -31,6 +31,9 @@ export default defineConfig({
     },
   },
 
+  // Support both standard VITE_ prefix and SUPABASE_ prefix
+  envPrefix: ['VITE_', 'SUPABASE_'],
+
   // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
   assetsInclude: ['**/*.svg', '**/*.csv'],
 })
