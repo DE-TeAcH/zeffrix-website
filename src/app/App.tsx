@@ -32,16 +32,32 @@ const staggerContainer = {
   transition: { staggerChildren: 0.2 }
 };
 
-function getBetaCount() {
-  const stored = localStorage.getItem('zeffrix_beta_count');
-  return stored ? parseInt(stored, 10) : 1;
+import { supabase, BetaUser } from '../lib/supabase';
+
+const BETA_MAX_USERS = 100;
+
+async function fetchBetaCount(): Promise<number> {
+  try {
+    const { count, error } = await supabase
+      .from('beta_users')
+      .select('*', { count: 'exact', head: true });
+
+    if (error) {
+      console.error('Error fetching beta user count:', error);
+      const stored = localStorage.getItem('zeffrix_beta_count');
+      return stored ? parseInt(stored, 10) : 0;
+    }
+    const safeCount = count ?? 0;
+    localStorage.setItem('zeffrix_beta_count', safeCount.toString());
+    return safeCount;
+  } catch (err) {
+    console.error('Failed to query supabase count:', err);
+    const stored = localStorage.getItem('zeffrix_beta_count');
+    return stored ? parseInt(stored, 10) : 0;
+  }
 }
 
-function setBetaCount(count: number) {
-  localStorage.setItem('zeffrix_beta_count', count.toString());
-}
-
-function BetaCounter({ count, max = 100 }: { count: number, max?: number }) {
+function BetaCounter({ count, max = BETA_MAX_USERS }: { count: number, max?: number }) {
   const percentage = Math.min(100, Math.max(0, (count / max) * 100));
   const isFull = count >= max;
 
@@ -58,19 +74,29 @@ function BetaCounter({ count, max = 100 }: { count: number, max?: number }) {
           initial={{ width: 0 }}
           animate={{ width: `${percentage}%` }}
           transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
-          className={`h-full rounded-full ${isFull ? 'bg-zinc-400' : 'bg-orange-500'}`}
+          className={`h-full rounded-full ${isFull ? 'bg-red-500' : 'bg-orange-500'}`}
         ></motion.div>
       </div>
+      {isFull && (
+        <div className="mt-2 text-xs font-semibold tracking-wider text-red-400 uppercase text-left">
+          Beta Capacity Reached (Closed)
+        </div>
+      )}
     </div>
   );
 }
 
 function Home() {
-  const [count, setCount] = useState(1);
+  const [count, setCount] = useState(() => {
+    const stored = localStorage.getItem('zeffrix_beta_count');
+    return stored ? parseInt(stored, 10) : 0;
+  });
   
   useEffect(() => {
-    setCount(getBetaCount());
+    fetchBetaCount().then((val) => setCount(val));
   }, []);
+
+  const isClosed = count >= BETA_MAX_USERS;
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white font-sans selection:bg-orange-500/30 overflow-x-hidden flex flex-col items-center justify-center relative p-6">
@@ -105,7 +131,9 @@ function Home() {
             <span className="text-orange-500">STARTS HERE.</span>
           </h1>
           <p className="text-lg md:text-xl text-zinc-400 max-w-lg mx-auto leading-relaxed">
-            Zeffrix is entering private beta. Be among the first to train with it.
+            {isClosed 
+              ? "Private beta registration has reached its 100-tester limit." 
+              : "Zeffrix is entering private beta. Be among the first to train with it."}
           </p>
         </motion.div>
 
@@ -118,9 +146,15 @@ function Home() {
         >
           <BetaCounter count={count} />
           
-          <Link to="/beta" className="w-full bg-orange-600 hover:bg-orange-500 text-white py-4 rounded-full text-base font-bold tracking-wide transition-all shadow-[0_0_20px_rgba(234,88,12,0.3)] hover:shadow-[0_0_30px_rgba(234,88,12,0.6)] flex items-center justify-center mb-4">
-            REGISTER FOR BETA
-          </Link>
+          {isClosed ? (
+            <div className="w-full bg-zinc-800 text-zinc-400 py-4 rounded-full text-base font-bold tracking-wide flex items-center justify-center mb-4 border border-zinc-700 cursor-not-allowed">
+              REGISTRATION CLOSED
+            </div>
+          ) : (
+            <Link to="/beta" className="w-full bg-orange-600 hover:bg-orange-500 text-white py-4 rounded-full text-base font-bold tracking-wide transition-all shadow-[0_0_20px_rgba(234,88,12,0.3)] hover:shadow-[0_0_30px_rgba(234,88,12,0.6)] flex items-center justify-center mb-4">
+              REGISTER FOR BETA
+            </Link>
+          )}
           <Link to="/discover" className="w-full py-4 rounded-full text-base font-bold tracking-wide text-zinc-300 hover:text-white border border-zinc-800 hover:bg-[#1A1A1A] transition-colors flex items-center justify-center mb-6">
             DISCOVER ZEFFRIX
           </Link>
@@ -136,29 +170,103 @@ function Home() {
 }
 
 function Beta() {
-  const [status, setStatus] = useState<'idle' | 'focused' | 'submitting' | 'success' | 'error' | 'invalid' | 'exists'>('idle');
-  const [formData, setFormData] = useState({ name: '', email: '', dob: '', country: '', phone: '', consent: false });
-  const [count, setCount] = useState(1);
+  const [status, setStatus] = useState<'idle' | 'focused' | 'submitting' | 'success' | 'error' | 'invalid' | 'exists' | 'full'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [formData, setFormData] = useState({ name: '', email: '', dob: '', country: '', consent: false });
+  const [count, setCount] = useState(() => {
+    const stored = localStorage.getItem('zeffrix_beta_count');
+    return stored ? parseInt(stored, 10) : 0;
+  });
+  const [isLoadingCount, setIsLoadingCount] = useState(true);
 
   useEffect(() => {
-    setCount(getBetaCount());
+    fetchBetaCount().then((val) => {
+      setCount(val);
+      setIsLoadingCount(false);
+      if (val >= BETA_MAX_USERS) {
+        setStatus('full');
+      }
+    });
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const isClosed = count >= BETA_MAX_USERS;
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.email || !formData.dob || !formData.country || !formData.consent) {
+    if (isClosed) {
+      setStatus('full');
+      return;
+    }
+
+    if (!formData.name.trim() || !formData.email.trim() || !formData.dob || !formData.country || !formData.consent) {
       setStatus('invalid');
       return;
     }
-    
-    // Simulate submission
+
+    const emailTrimmed = formData.email.trim().toLowerCase();
+
     setStatus('submitting');
-    setTimeout(() => {
+    setErrorMessage('');
+
+    try {
+      // 1. Re-check latest user count to ensure not exceeding 100
+      const currentCount = await fetchBetaCount();
+      setCount(currentCount);
+
+      if (currentCount >= BETA_MAX_USERS) {
+        setStatus('full');
+        return;
+      }
+
+      // 2. Check if email already registered
+      const { data: existingUser, error: checkError } = await supabase
+        .from('beta_users')
+        .select('email')
+        .eq('email', emailTrimmed)
+        .maybeSingle();
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error('Error checking duplicate user:', checkError);
+      }
+
+      if (existingUser) {
+        setStatus('exists');
+        return;
+      }
+
+      // 3. Insert record into beta_users table
+      const newRecord: BetaUser = {
+        full_name: formData.name.trim(),
+        email: emailTrimmed,
+        date_of_birth: formData.dob,
+        country: formData.country,
+      };
+
+      const { error: insertError } = await supabase
+        .from('beta_users')
+        .insert([newRecord]);
+
+      if (insertError) {
+        // If Postgres unique constraint violation
+        if (insertError.code === '23505') {
+          setStatus('exists');
+          return;
+        }
+        console.error('Insert error:', insertError);
+        setErrorMessage(insertError.message || 'An error occurred while submitting. Please try again.');
+        setStatus('error');
+        return;
+      }
+
+      // 4. Update count and set success
+      const updatedCount = await fetchBetaCount();
+      setCount(updatedCount);
       setStatus('success');
-      const newCount = count + 1;
-      setCount(newCount);
-      setBetaCount(newCount);
-    }, 1500);
+    } catch (err: any) {
+      console.error('Submission failed:', err);
+      setErrorMessage(err?.message || 'Network error. Please try again later.');
+      setStatus('error');
+    }
   };
 
   return (
@@ -221,103 +329,140 @@ function Beta() {
 
             <div className="bg-[#141414] border border-zinc-800 rounded-2xl p-5 mb-8 flex items-center justify-between">
                <div>
-                 <div className="text-2xl font-bold tracking-tight text-white">{count} <span className="text-zinc-500 font-medium text-lg">/ 100</span></div>
-                 <div className="text-xs text-zinc-400 mt-1">people have applied for the first beta.</div>
+                 <div className="text-2xl font-bold tracking-tight text-white">{count} <span className="text-zinc-500 font-medium text-lg">/ {BETA_MAX_USERS}</span></div>
+                 <div className="text-xs text-zinc-400 mt-1">
+                   {isClosed ? 'Beta capacity reached. Registration is now closed.' : 'people have applied for the first beta.'}
+                 </div>
                </div>
                <div className="w-16 h-1.5 bg-[#0D0D0D] rounded-full overflow-hidden border border-zinc-800/50">
-                 <div className="h-full bg-orange-500 rounded-full" style={{ width: `${Math.min(100, (count/100)*100)}%` }}></div>
+                 <div 
+                   className={`h-full rounded-full ${isClosed ? 'bg-red-500' : 'bg-orange-500'}`} 
+                   style={{ width: `${Math.min(100, (count / BETA_MAX_USERS) * 100)}%` }}
+                 ></div>
                </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="bg-[#141414] border border-zinc-800 rounded-3xl p-6 md:p-8 shadow-xl">
-              
-              {status === 'invalid' && (
-                <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-sm mb-6 font-medium">
-                  Please fill out all required fields to continue.
+            {isClosed ? (
+              <div className="bg-[#141414] border border-zinc-800 rounded-3xl p-8 text-center shadow-xl">
+                <div className="w-12 h-12 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center mx-auto mb-4 font-bold text-xl">
+                  !
                 </div>
-              )}
-              
-              <div className="space-y-5">
-                <div>
-                  <label className="block text-xs font-bold tracking-wider text-zinc-500 uppercase mb-2">Full Name *</label>
-                  <input 
-                    type="text" 
-                    value={formData.name}
-                    onChange={e => setFormData({...formData, name: e.target.value})}
-                    onFocus={() => setStatus('focused')}
-                    className="w-full bg-[#1A1A1A] border border-zinc-800 focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 rounded-xl px-4 py-3.5 text-white outline-none transition-all placeholder:text-zinc-600"
-                    placeholder="Enter your name"
-                  />
-                </div>
+                <h3 className="text-2xl font-bold mb-2">Registration Closed</h3>
+                <p className="text-zinc-400 text-sm leading-relaxed mb-6">
+                  The private beta has reached the limit of {BETA_MAX_USERS} applicants. Follow our updates or check back for future beta rounds.
+                </p>
+                <Link to="/" className="w-full inline-flex justify-center bg-zinc-800 hover:bg-zinc-700 text-white py-3.5 rounded-xl text-sm font-bold tracking-wide transition-all">
+                  BACK HOME
+                </Link>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="bg-[#141414] border border-zinc-800 rounded-3xl p-6 md:p-8 shadow-xl">
+                
+                {status === 'invalid' && (
+                  <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-sm mb-6 font-medium">
+                    Please fill out all required fields to continue.
+                  </div>
+                )}
 
-                <div>
-                  <label className="block text-xs font-bold tracking-wider text-zinc-500 uppercase mb-2">Email Address *</label>
-                  <input 
-                    type="email" 
-                    value={formData.email}
-                    onChange={e => setFormData({...formData, email: e.target.value})}
-                    onFocus={() => setStatus('focused')}
-                    className="w-full bg-[#1A1A1A] border border-zinc-800 focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 rounded-xl px-4 py-3.5 text-white outline-none transition-all placeholder:text-zinc-600"
-                    placeholder="name@example.com"
-                  />
-                </div>
+                {status === 'exists' && (
+                  <div className="bg-orange-500/10 border border-orange-500/20 text-orange-400 px-4 py-3 rounded-xl text-sm mb-6 font-medium">
+                    This email is already registered for the beta waitlist!
+                  </div>
+                )}
 
-                <div className="grid grid-cols-2 gap-4">
+                {status === 'error' && (
+                  <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-sm mb-6 font-medium">
+                    {errorMessage || 'Failed to submit registration. Please try again.'}
+                  </div>
+                )}
+                
+                <div className="space-y-5">
                   <div>
-                    <label className="block text-xs font-bold tracking-wider text-zinc-500 uppercase mb-2">Date of Birth *</label>
+                    <label className="block text-xs font-bold tracking-wider text-zinc-500 uppercase mb-2">Full Name *</label>
                     <input 
-                      type="date" 
-                      value={formData.dob}
-                      onChange={e => setFormData({...formData, dob: e.target.value})}
-                      onFocus={() => setStatus('focused')}
-                      className="w-full bg-[#1A1A1A] border border-zinc-800 focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 rounded-xl px-4 py-3.5 text-white outline-none transition-all text-sm [color-scheme:dark]"
+                      type="text" 
+                      required
+                      value={formData.name}
+                      onChange={e => setFormData({...formData, name: e.target.value})}
+                      onFocus={() => { if (status !== 'submitting') setStatus('focused'); }}
+                      className="w-full bg-[#1A1A1A] border border-zinc-800 focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 rounded-xl px-4 py-3.5 text-white outline-none transition-all placeholder:text-zinc-600"
+                      placeholder="Enter your name"
                     />
                   </div>
+
                   <div>
-                    <label className="block text-xs font-bold tracking-wider text-zinc-500 uppercase mb-2">Country *</label>
-                    <select 
-                      value={formData.country}
-                      onChange={e => setFormData({...formData, country: e.target.value})}
-                      onFocus={() => setStatus('focused')}
-                      className="w-full bg-[#1A1A1A] border border-zinc-800 focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 rounded-xl px-4 py-3.5 text-white outline-none transition-all text-sm appearance-none"
-                    >
-                      <option value="" disabled>Select...</option>
-                      <option value="US">United States</option>
-                      <option value="UK">United Kingdom</option>
-                      <option value="CA">Canada</option>
-                      <option value="AU">Australia</option>
-                      <option value="OTHER">Other</option>
-                    </select>
+                    <label className="block text-xs font-bold tracking-wider text-zinc-500 uppercase mb-2">Email Address *</label>
+                    <input 
+                      type="email" 
+                      required
+                      value={formData.email}
+                      onChange={e => setFormData({...formData, email: e.target.value})}
+                      onFocus={() => { if (status !== 'submitting') setStatus('focused'); }}
+                      className="w-full bg-[#1A1A1A] border border-zinc-800 focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 rounded-xl px-4 py-3.5 text-white outline-none transition-all placeholder:text-zinc-600"
+                      placeholder="name@example.com"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold tracking-wider text-zinc-500 uppercase mb-2">Date of Birth *</label>
+                      <input 
+                        type="date" 
+                        required
+                        value={formData.dob}
+                        onChange={e => setFormData({...formData, dob: e.target.value})}
+                        onFocus={() => { if (status !== 'submitting') setStatus('focused'); }}
+                        className="w-full bg-[#1A1A1A] border border-zinc-800 focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 rounded-xl px-4 py-3.5 text-white outline-none transition-all text-sm [color-scheme:dark]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold tracking-wider text-zinc-500 uppercase mb-2">Country *</label>
+                      <select 
+                        required
+                        value={formData.country}
+                        onChange={e => setFormData({...formData, country: e.target.value})}
+                        onFocus={() => { if (status !== 'submitting') setStatus('focused'); }}
+                        className="w-full bg-[#1A1A1A] border border-zinc-800 focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 rounded-xl px-4 py-3.5 text-white outline-none transition-all text-sm appearance-none"
+                      >
+                        <option value="" disabled>Select...</option>
+                        <option value="US">United States</option>
+                        <option value="UK">United Kingdom</option>
+                        <option value="CA">Canada</option>
+                        <option value="AU">Australia</option>
+                        <option value="DE">Germany</option>
+                        <option value="FR">France</option>
+                        <option value="OTHER">Other</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div className="pt-2">
+                    <label className="flex items-start gap-3 cursor-pointer group">
+                      <div className="relative flex items-center justify-center mt-0.5">
+                        <input 
+                          type="checkbox" 
+                          checked={formData.consent}
+                          onChange={e => setFormData({...formData, consent: e.target.checked})}
+                          className="peer appearance-none w-5 h-5 border-2 border-zinc-700 rounded bg-[#1A1A1A] checked:bg-orange-500 checked:border-orange-500 focus:ring-2 focus:ring-orange-500/30 outline-none transition-all"
+                        />
+                        <CheckCircle2 className="absolute w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity" />
+                      </div>
+                      <span className="text-sm text-zinc-400 group-hover:text-zinc-300 transition-colors">
+                        I agree to receive emails about the Zeffrix beta.
+                      </span>
+                    </label>
                   </div>
                 </div>
-                
-                <div className="pt-2">
-                  <label className="flex items-start gap-3 cursor-pointer group">
-                    <div className="relative flex items-center justify-center mt-0.5">
-                      <input 
-                        type="checkbox" 
-                        checked={formData.consent}
-                        onChange={e => setFormData({...formData, consent: e.target.checked})}
-                        className="peer appearance-none w-5 h-5 border-2 border-zinc-700 rounded bg-[#1A1A1A] checked:bg-orange-500 checked:border-orange-500 focus:ring-2 focus:ring-orange-500/30 outline-none transition-all"
-                      />
-                      <CheckCircle2 className="absolute w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity" />
-                    </div>
-                    <span className="text-sm text-zinc-400 group-hover:text-zinc-300 transition-colors">
-                      I agree to receive emails about the Zeffrix beta.
-                    </span>
-                  </label>
-                </div>
-              </div>
 
-              <button 
-                type="submit" 
-                disabled={status === 'submitting'}
-                className="w-full mt-8 bg-orange-600 hover:bg-orange-500 disabled:bg-orange-800 disabled:text-white/50 text-white py-4 rounded-xl text-sm font-bold tracking-wide transition-all shadow-[0_0_15px_rgba(234,88,12,0.2)] disabled:shadow-none flex items-center justify-center"
-              >
-                {status === 'submitting' ? 'REGISTERING...' : 'REGISTER FOR BETA'}
-              </button>
-            </form>
-
+                <button 
+                  type="submit" 
+                  disabled={status === 'submitting' || isLoadingCount}
+                  className="w-full mt-8 bg-orange-600 hover:bg-orange-500 disabled:bg-orange-800/60 disabled:text-white/50 text-white py-4 rounded-xl text-sm font-bold tracking-wide transition-all shadow-[0_0_15px_rgba(234,88,12,0.2)] disabled:shadow-none flex items-center justify-center cursor-pointer disabled:cursor-not-allowed"
+                >
+                  {status === 'submitting' ? 'REGISTERING...' : 'REGISTER FOR BETA'}
+                </button>
+              </form>
+            )}
           </motion.div>
         )}
       </div>
@@ -353,15 +498,22 @@ export function Discover() {
   const [activeCoachScreen, setActiveCoachScreen] = useState<1 | 2>(2);
   const [activeWorkoutScreen, setActiveWorkoutScreen] = useState<1 | 2>(2);
   const [activeProgressScreen, setActiveProgressScreen] = useState<1 | 2>(2);
+  const [count, setCount] = useState(() => {
+    const stored = localStorage.getItem('zeffrix_beta_count');
+    return stored ? parseInt(stored, 10) : 0;
+  });
   const navigate = useNavigate();
 
   useEffect(() => {
+    fetchBetaCount().then((val) => setCount(val));
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const isClosed = count >= BETA_MAX_USERS;
 
   const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
     e.preventDefault();
@@ -396,9 +548,15 @@ export function Discover() {
           </div>
 
           <div className="hidden md:flex items-center gap-6">
-            <Link to="/beta" className="bg-orange-600 hover:bg-orange-500 text-white px-6 py-2.5 rounded-full text-sm font-bold tracking-wide transition-all shadow-[0_0_15px_rgba(234,88,12,0.3)] hover:shadow-[0_0_25px_rgba(234,88,12,0.5)]">
-              REGISTER FOR BETA
-            </Link>
+            {isClosed ? (
+              <span className="bg-zinc-800 text-zinc-400 px-6 py-2.5 rounded-full text-sm font-bold tracking-wide border border-zinc-700 cursor-not-allowed">
+                REGISTRATION CLOSED
+              </span>
+            ) : (
+              <Link to="/beta" className="bg-orange-600 hover:bg-orange-500 text-white px-6 py-2.5 rounded-full text-sm font-bold tracking-wide transition-all shadow-[0_0_15px_rgba(234,88,12,0.3)] hover:shadow-[0_0_25px_rgba(234,88,12,0.5)]">
+                REGISTER FOR BETA
+              </Link>
+            )}
           </div>
 
           {/* Mobile Toggle */}
@@ -447,9 +605,15 @@ export function Discover() {
                       </a>
                     ))}
                   </div>
-                  <Link to="/beta" className="w-full text-center bg-orange-600 hover:bg-orange-500 text-white py-3.5 rounded-xl font-bold tracking-wide transition-all shadow-[0_0_15px_rgba(234,88,12,0.2)]">
-                    REGISTER FOR BETA
-                  </Link>
+                  {isClosed ? (
+                    <div className="w-full text-center bg-zinc-800 text-zinc-400 py-3.5 rounded-xl font-bold tracking-wide border border-zinc-700">
+                      REGISTRATION CLOSED
+                    </div>
+                  ) : (
+                    <Link to="/beta" className="w-full text-center bg-orange-600 hover:bg-orange-500 text-white py-3.5 rounded-xl font-bold tracking-wide transition-all shadow-[0_0_15px_rgba(234,88,12,0.2)]">
+                      REGISTER FOR BETA
+                    </Link>
+                  )}
                 </div>
               </motion.div>
             </>
@@ -473,9 +637,15 @@ export function Discover() {
             Build workouts, train with AI guidance, and track the progress that actually matters.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
-            <Link to="/beta" className="w-full sm:w-auto bg-orange-600 hover:bg-orange-500 text-white px-8 py-4 rounded-full font-bold tracking-wide transition-all shadow-[0_0_20px_rgba(234,88,12,0.3)] hover:shadow-[0_0_30px_rgba(234,88,12,0.6)] flex items-center justify-center gap-2">
-              REGISTER FOR BETA <ArrowRight size={20} />
-            </Link>
+            {isClosed ? (
+              <div className="w-full sm:w-auto bg-zinc-800 text-zinc-400 px-8 py-4 rounded-full font-bold tracking-wide border border-zinc-700 cursor-not-allowed">
+                REGISTRATION CLOSED
+              </div>
+            ) : (
+              <Link to="/beta" className="w-full sm:w-auto bg-orange-600 hover:bg-orange-500 text-white px-8 py-4 rounded-full font-bold tracking-wide transition-all shadow-[0_0_20px_rgba(234,88,12,0.3)] hover:shadow-[0_0_30px_rgba(234,88,12,0.6)] flex items-center justify-center gap-2">
+                REGISTER FOR BETA <ArrowRight size={20} />
+              </Link>
+            )}
             <button onClick={(e) => scrollToSection(e, 'features')} className="w-full sm:w-auto px-8 py-4 rounded-full font-bold tracking-wide text-zinc-300 hover:text-white border border-zinc-800 hover:bg-zinc-900 transition-colors">
               Explore Features
             </button>
@@ -854,9 +1024,15 @@ export function Discover() {
             <span className="text-orange-500">ONE APP.</span>
           </h2>
           
-          <Link to="/beta" className="bg-orange-600 hover:bg-orange-500 text-white px-8 md:px-10 py-4 md:py-5 rounded-full text-base md:text-lg font-bold tracking-wider transition-all shadow-[0_0_30px_rgba(234,88,12,0.4)] hover:shadow-[0_0_50px_rgba(234,88,12,0.7)] hover:scale-105 inline-flex items-center justify-center gap-3 w-full sm:w-auto">
-            REGISTER FOR BETA
-          </Link>
+          {isClosed ? (
+            <div className="bg-zinc-800 text-zinc-400 px-8 md:px-10 py-4 md:py-5 rounded-full text-base md:text-lg font-bold tracking-wider border border-zinc-700 cursor-not-allowed inline-flex items-center justify-center gap-3 w-full sm:w-auto">
+              REGISTRATION CLOSED
+            </div>
+          ) : (
+            <Link to="/beta" className="bg-orange-600 hover:bg-orange-500 text-white px-8 md:px-10 py-4 md:py-5 rounded-full text-base md:text-lg font-bold tracking-wider transition-all shadow-[0_0_30px_rgba(234,88,12,0.4)] hover:shadow-[0_0_50px_rgba(234,88,12,0.7)] hover:scale-105 inline-flex items-center justify-center gap-3 w-full sm:w-auto">
+              REGISTER FOR BETA
+            </Link>
+          )}
         </motion.div>
       </section>
 
