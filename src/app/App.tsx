@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Menu, X, ArrowRight, Dumbbell, Activity, Cpu, LineChart, CheckCircle2, Play, ChevronLeft } from 'lucide-react';
 import { createBrowserRouter, RouterProvider, Link, useNavigate } from 'react-router';
 import { ImageWithFallback } from './components/figma/ImageWithFallback';
+import { LegalPage } from './LegalPage';
+import { WorkoutSplitsModal } from './components/WorkoutSplitsModal';
 
 import homeImg from '../imports/home.png';
 import coach1 from '../imports/coach_1.jpg';
@@ -22,7 +24,7 @@ const fadeIn = {
   initial: { opacity: 0, y: 20 },
   whileInView: { opacity: 1, y: 0 },
   viewport: { once: true, margin: "-100px" },
-  transition: { duration: 0.6, ease: "easeOut" }
+  transition: { duration: 0.6, ease: "easeOut" as const }
 };
 
 const staggerContainer = {
@@ -73,7 +75,7 @@ function BetaCounter({ count, max = BETA_MAX_USERS }: { count: number, max?: num
         <motion.div 
           initial={{ width: 0 }}
           animate={{ width: `${percentage}%` }}
-          transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
+          transition={{ duration: 1, ease: "easeOut" as const, delay: 0.2 }}
           className={`h-full rounded-full ${isFull ? 'bg-red-500' : 'bg-orange-500'}`}
         ></motion.div>
       </div>
@@ -110,7 +112,7 @@ function Home() {
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
+          transition={{ duration: 0.8, ease: "easeOut" as const }}
           className="flex flex-col items-center mb-10"
         >
           <div className="w-12 h-12 md:w-16 md:h-16 rounded-full overflow-hidden flex items-center justify-center mb-4">
@@ -123,7 +125,7 @@ function Home() {
         <motion.div 
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.1, ease: "easeOut" }}
+          transition={{ duration: 0.8, delay: 0.1, ease: "easeOut" as const }}
           className="mb-14"
         >
           <h1 className="text-5xl sm:text-6xl md:text-[5.5rem] lg:text-[6.5rem] font-extrabold tracking-tighter leading-[0.95] mb-6">
@@ -141,7 +143,7 @@ function Home() {
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
+          transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" as const }}
           className="flex flex-col items-center w-full max-w-sm mx-auto"
         >
           <BetaCounter count={count} />
@@ -159,9 +161,15 @@ function Home() {
             DISCOVER ZEFFRIX
           </Link>
           
-          <p className="text-xs font-medium text-zinc-500 tracking-wider uppercase">
+          <p className="text-xs font-medium text-zinc-500 tracking-wider uppercase mb-3">
             Android &middot; Private Beta &middot; Limited Access
           </p>
+
+          <div className="flex items-center gap-4 text-xs text-zinc-600">
+            <Link to="/terms" className="hover:text-zinc-400 transition-colors">Terms of Use</Link>
+            <span>&bull;</span>
+            <Link to="/privacy" className="hover:text-zinc-400 transition-colors">Privacy Policy</Link>
+          </div>
         </motion.div>
 
       </div>
@@ -169,15 +177,85 @@ function Home() {
   );
 }
 
+const formatDateToYMD = (d: Date): string => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const getMaxDob = (): string => {
+  const today = new Date();
+  const maxDate = new Date(today.getFullYear() - 16, today.getMonth(), today.getDate());
+  return formatDateToYMD(maxDate);
+};
+
+const getMinDob = (): string => {
+  const today = new Date();
+  const minDate = new Date(today.getFullYear() - 120, today.getMonth(), today.getDate());
+  return formatDateToYMD(minDate);
+};
+
+const validateDob = (dobString: string): { isValid: boolean; error?: string } => {
+  if (!dobString) {
+    return { isValid: false, error: 'Date of birth is required.' };
+  }
+
+  const parts = dobString.split('-');
+  if (parts.length !== 3) {
+    return { isValid: false, error: 'Please enter a valid date of birth.' };
+  }
+
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10) - 1;
+  const day = parseInt(parts[2], 10);
+
+  if (isNaN(year) || isNaN(month) || isNaN(day)) {
+    return { isValid: false, error: 'Please enter a valid date of birth.' };
+  }
+
+  const dob = new Date(year, month, day);
+  if (dob.getFullYear() !== year || dob.getMonth() !== month || dob.getDate() !== day) {
+    return { isValid: false, error: 'Please enter a valid date of birth.' };
+  }
+
+  const today = new Date();
+  const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+  if (dob > todayDateOnly) {
+    return { isValid: false, error: 'Date of birth cannot be in the future.' };
+  }
+
+  let age = today.getFullYear() - dob.getFullYear();
+  const monthDiff = today.getMonth() - dob.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+    age--;
+  }
+
+  if (age < 16) {
+    return { isValid: false, error: 'You must be at least 16 years old to register.' };
+  }
+
+  if (age > 120) {
+    return { isValid: false, error: 'Please enter a valid date of birth.' };
+  }
+
+  return { isValid: true };
+};
+
 function Beta() {
-  const [status, setStatus] = useState<'idle' | 'focused' | 'submitting' | 'success' | 'error' | 'invalid' | 'exists' | 'full'>('idle');
+  const [status, setStatus] = useState<'idle' | 'focused' | 'submitting' | 'success' | 'error' | 'invalid' | 'underage' | 'exists' | 'full'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const [dobError, setDobError] = useState('');
   const [formData, setFormData] = useState({ name: '', email: '', dob: '', country: '', consent: false });
   const [count, setCount] = useState(() => {
     const stored = localStorage.getItem('zeffrix_beta_count');
     return stored ? parseInt(stored, 10) : 0;
   });
   const [isLoadingCount, setIsLoadingCount] = useState(true);
+
+  const maxDob = useMemo(() => getMaxDob(), []);
+  const minDob = useMemo(() => getMinDob(), []);
 
   useEffect(() => {
     fetchBetaCount().then((val) => {
@@ -200,6 +278,13 @@ function Beta() {
 
     if (!formData.name.trim() || !formData.email.trim() || !formData.dob || !formData.country || !formData.consent) {
       setStatus('invalid');
+      return;
+    }
+
+    const dobValidation = validateDob(formData.dob);
+    if (!dobValidation.isValid) {
+      setDobError(dobValidation.error || 'You must be at least 16 years old to register.');
+      setStatus('underage');
       return;
     }
 
@@ -364,6 +449,12 @@ function Beta() {
                   </div>
                 )}
 
+                {status === 'underage' && (
+                  <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-sm mb-6 font-medium">
+                    {dobError || 'You must be at least 16 years old to register for the beta.'}
+                  </div>
+                )}
+
                 {status === 'exists' && (
                   <div className="bg-orange-500/10 border border-orange-500/20 text-orange-400 px-4 py-3 rounded-xl text-sm mb-6 font-medium">
                     This email is already registered for the beta waitlist!
@@ -409,11 +500,37 @@ function Beta() {
                       <input 
                         type="date" 
                         required
+                        max={maxDob}
+                        min={minDob}
                         value={formData.dob}
-                        onChange={e => setFormData({...formData, dob: e.target.value})}
-                        onFocus={() => { if (status !== 'submitting') setStatus('focused'); }}
-                        className="w-full bg-[#1A1A1A] border border-zinc-800 focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 rounded-xl px-4 py-3.5 text-white outline-none transition-all text-sm [color-scheme:dark]"
+                        onChange={e => {
+                          const newDob = e.target.value;
+                          setFormData({...formData, dob: newDob});
+                          if (status !== 'submitting') setStatus('focused');
+                          if (newDob) {
+                            const check = validateDob(newDob);
+                            setDobError(check.isValid ? '' : (check.error || ''));
+                          } else {
+                            setDobError('');
+                          }
+                        }}
+                        onBlur={() => {
+                          if (formData.dob) {
+                            const check = validateDob(formData.dob);
+                            setDobError(check.isValid ? '' : (check.error || ''));
+                          }
+                        }}
+                        className={`w-full bg-[#1A1A1A] border ${
+                          dobError 
+                            ? 'border-red-500/80 focus:border-red-500 focus:ring-red-500/50' 
+                            : 'border-zinc-800 focus:border-orange-500 focus:ring-orange-500/50'
+                        } focus:ring-1 rounded-xl px-4 py-3.5 text-white outline-none transition-all text-sm [color-scheme:dark]`}
                       />
+                      {dobError ? (
+                        <p className="text-[11px] text-red-400 mt-1.5 font-medium leading-tight">{dobError}</p>
+                      ) : (
+                        <p className="text-[11px] text-zinc-500 mt-1.5 leading-tight">Must be at least 16 years old</p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-xs font-bold tracking-wider text-zinc-500 uppercase mb-2">Country *</label>
@@ -463,10 +580,48 @@ function Beta() {
                 </button>
               </form>
             )}
+
+            <div className="flex items-center justify-center gap-4 text-xs text-zinc-600 mt-8">
+              <Link to="/terms" className="hover:text-zinc-400 transition-colors">Terms of Use</Link>
+              <span>&bull;</span>
+              <Link to="/privacy" className="hover:text-zinc-400 transition-colors">Privacy Policy</Link>
+            </div>
           </motion.div>
         )}
       </div>
     </div>
+  );
+}
+
+function Terms() {
+  const navigate = useNavigate();
+  return (
+    <LegalPage
+      type="terms"
+      onBack={() => {
+        if (window.history.length > 1) {
+          navigate(-1);
+        } else {
+          navigate('/');
+        }
+      }}
+    />
+  );
+}
+
+function Privacy() {
+  const navigate = useNavigate();
+  return (
+    <LegalPage
+      type="privacy"
+      onBack={() => {
+        if (window.history.length > 1) {
+          navigate(-1);
+        } else {
+          navigate('/');
+        }
+      }}
+    />
   );
 }
 
@@ -482,6 +637,14 @@ const router = createBrowserRouter([
   {
     path: "/beta",
     Component: Beta,
+  },
+  {
+    path: "/terms",
+    Component: Terms,
+  },
+  {
+    path: "/privacy",
+    Component: Privacy,
   }
 ]);
 
@@ -502,6 +665,7 @@ export function Discover() {
     const stored = localStorage.getItem('zeffrix_beta_count');
     return stored ? parseInt(stored, 10) : 0;
   });
+  const [isSplitsModalOpen, setIsSplitsModalOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -515,7 +679,7 @@ export function Discover() {
 
   const isClosed = count >= BETA_MAX_USERS;
 
-  const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
+  const scrollToSection = (e: React.MouseEvent<HTMLElement>, id: string) => {
     e.preventDefault();
     setMobileMenuOpen(false);
     const element = document.getElementById(id);
@@ -584,7 +748,7 @@ export function Discover() {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2, ease: "easeOut" }}
+                transition={{ duration: 0.2, ease: "easeOut" as const }}
                 className="absolute top-full left-0 right-0 bg-[#0D0D0D] border-b border-zinc-800 shadow-2xl z-50 md:hidden"
               >
                 <div className="px-6 py-6 flex flex-col">
@@ -905,8 +1069,11 @@ export function Discover() {
             <p className="text-zinc-400 text-base md:text-lg leading-relaxed">
               Access structured training programs while keeping your own custom workouts easily available. See exercise counts, durations, and overview details before you even start sweating.
             </p>
-            <button className="text-orange-500 font-bold flex items-center justify-center md:justify-start gap-2 hover:gap-4 transition-all w-full md:w-auto pt-4 md:pt-0">
-              EXPLORE WORKOUTS <ArrowRight size={20} />
+            <button 
+              onClick={() => setIsSplitsModalOpen(true)}
+              className="text-orange-500 font-bold flex items-center justify-center md:justify-start gap-2 hover:gap-4 transition-all w-full md:w-auto pt-4 md:pt-0 cursor-pointer group"
+            >
+              EXPLORE WORKOUTS <ArrowRight size={20} className="transform group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
           
@@ -1057,15 +1224,25 @@ export function Discover() {
             <a href="#ai-coach" className="hover:text-white transition-colors">AI Coach</a>
             <a href="#workouts" className="hover:text-white transition-colors">Workouts</a>
             <a href="#progress" className="hover:text-white transition-colors">Progress</a>
-            <a href="#" className="hover:text-white transition-colors">Privacy</a>
-            <a href="#" className="hover:text-white transition-colors">Terms</a>
+            <Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link>
+            <Link to="/terms" className="hover:text-white transition-colors">Terms</Link>
           </div>
 
         </div>
-        <div className="max-w-7xl mx-auto mt-12 pt-8 border-t border-zinc-900/50 text-center text-xs text-zinc-600">
-          &copy; {new Date().getFullYear()} Zeffrix. All rights reserved.
+        <div className="max-w-7xl mx-auto mt-12 pt-8 border-t border-zinc-900/50 flex flex-col sm:flex-row items-center justify-between text-xs text-zinc-600 gap-4">
+          <p>&copy; {new Date().getFullYear()} Zeffrix Fitness. All rights reserved.</p>
+          <div className="flex items-center space-x-6">
+            <Link to="/terms" className="hover:text-orange-500 transition-colors">Terms of Use</Link>
+            <span>&bull;</span>
+            <Link to="/privacy" className="hover:text-orange-500 transition-colors">Privacy Policy</Link>
+          </div>
         </div>
       </footer>
+
+      <WorkoutSplitsModal
+        isOpen={isSplitsModalOpen}
+        onClose={() => setIsSplitsModalOpen(false)}
+      />
     </div>
   );
 }
